@@ -1,0 +1,79 @@
+import { DatabaseSync } from 'node:sqlite';
+import fs from 'node:fs';
+import path from 'node:path';
+import { canCancel, canComplete, listingSchema, listingStatus, remaining, reserveSchema, type ListingInput, type Snapshot, type Listing, type Reservation, type Organization, type Activity } from './domain';
+
+const root=process.cwd();
+const file = path.resolve(root, process.env.DATABASE_PATH || 'data/osufood.sqlite');
+if (!file.startsWith(root + path.sep) || !file.endsWith('.sqlite')) throw new Error('DATABASE_PATH must be a .sqlite file inside this project');
+let instance: DatabaseSync | undefined;
+export function db() {
+  if (instance) return instance;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const d = new DatabaseSync(file);
+  d.exec(`PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;
+    CREATE TABLE IF NOT EXISTS organizations (id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL, description TEXT NOT NULL, location TEXT NOT NULL, createdAt TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS listings (id TEXT PRIMARY KEY, organizationId TEXT NOT NULL REFERENCES organizations(id), title TEXT NOT NULL, description TEXT NOT NULL, category TEXT NOT NULL, quantityAvailable INTEGER NOT NULL CHECK(quantityAvailable >= 0), originalQuantity INTEGER NOT NULL CHECK(originalQuantity > 0), quantityUnit TEXT NOT NULL, pickupLocation TEXT NOT NULL, pickupStart TEXT NOT NULL, pickupEnd TEXT NOT NULL, storageRequirements TEXT NOT NULL, allergenInformation TEXT NOT NULL, closed INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS reservations (id TEXT PRIMARY KEY, listingId TEXT NOT NULL REFERENCES listings(id), organizationId TEXT NOT NULL REFERENCES organizations(id), quantity INTEGER NOT NULL CHECK(quantity > 0), status TEXT NOT NULL CHECK(status IN ('RESERVED','COMPLETED','CANCELED')), pickupCode TEXT NOT NULL, createdAt TEXT NOT NULL, confirmedAt TEXT, collectedAt TEXT, canceledAt TEXT);
+    CREATE TABLE IF NOT EXISTS activity (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, entityType TEXT NOT NULL, entityId TEXT NOT NULL, description TEXT NOT NULL, timestamp TEXT NOT NULL);`);
+  instance = d;
+  if (!(d.prepare('SELECT 1 FROM organizations LIMIT 1').get())) seed(d);
+  addDemoSites(d);
+  return d;
+}
+function transaction<T>(d: DatabaseSync, fn: () => T): T { d.exec('BEGIN IMMEDIATE'); try { const result = fn(); d.exec('COMMIT'); return result; } catch (e) { d.exec('ROLLBACK'); throw e; } }
+const now = () => new Date().toISOString();
+const days = (n: number) => new Date(Date.now() + n * 86400000).toISOString();
+function log(d: DatabaseSync, action: string, entityType: string, entityId: string, description: string) { d.prepare('INSERT INTO activity(action,entityType,entityId,description,timestamp) VALUES (?,?,?,?,?)').run(action,entityType,entityId,description,now()); }
+// Fictional demonstration organizations, attached to named campus areas for clearer pickup routing.
+const campusSites = [
+  ['pantry-mu','Campus Community Pantry — Memorial Union','FOOD_PANTRY','Memorial Union'],
+  ['pantry-library','Campus Community Pantry — Valley Library','FOOD_PANTRY','Valley Library'],
+  ['pantry-residence','Campus Community Pantry — Residence Hall Area','FOOD_PANTRY','Residence Hall Area'],
+  ['mutual-mu','Student Mutual Aid Kitchen — Memorial Union','FOOD_PANTRY','Memorial Union'],
+  ['mutual-library','Student Mutual Aid Kitchen — Valley Library','FOOD_PANTRY','Valley Library'],
+] as const;
+function addDemoSites(d: DatabaseSync) {
+  const insert=d.prepare('INSERT OR IGNORE INTO organizations (id,name,type,description,location,createdAt) VALUES (?,?,?,?,?,?)');
+  for (const [id,name,type,site] of campusSites) insert.run(id,name,type,'Fictional demonstration site; no actual partner or pickup service is implied',`Demo site: ${site}`,now());
+  // Ensure authentic OSU dining center names are updated in existing databases
+  d.prepare("UPDATE organizations SET name='McNary Dining Center', location='East campus - McNary' WHERE id='north' OR id='mcnary'").run();
+  d.prepare("UPDATE organizations SET name='Arnold Dining Center', location='South campus - Arnold' WHERE id='valley' OR id='arnold'").run();
+  d.prepare("UPDATE organizations SET name='Marketplace West', location='West campus - Marketplace West' WHERE id='west'").run();
+}
+function seed(d: DatabaseSync) {
+  transaction(d, () => {
+    const orgs = [ ['mcnary','McNary Dining Center','DINING_FACILITY'],['arnold','Arnold Dining Center','DINING_FACILITY'],['west','Marketplace West','DINING_FACILITY'],['pantry','Campus Community Pantry','FOOD_PANTRY'],['network','Corvallis Food Support Network','REDISTRIBUTION_PARTNER'],['mutual','Student Mutual Aid Kitchen','FOOD_PANTRY'] ];
+    for (const [id,name,type] of orgs) d.prepare('INSERT INTO organizations VALUES (?,?,?,?,?,?)').run(id,name,type,'Fictional demonstration organization','Corvallis area',now());
+    const foods: [string,string,string,number,string,string,number][] = [
+      ['Fresh vegetable meal boxes','Produce', 'mcnary',20,'boxes','Chill promptly; organization-provided guidance.',2],['Prepared pasta portions','Prepared meals','arnold',30,'portions','Keep refrigerated.',2],['Packaged sandwiches','Prepared meals','west',24,'items','Keep refrigerated.',1],['Apples and bananas','Produce','mcnary',35,'items','Store cool and dry.',3],['Sealed breakfast items','Packaged','arnold',18,'items','Follow package directions.',3],['Unopened dairy products','Dairy','west',12,'items','Keep refrigerated.',2],['Bread and baked goods','Bakery','mcnary',16,'bags','Store cool and dry.',4],['Harvest salad trays','Prepared meals','arnold',10,'trays','Keep refrigerated.',2],['Citrus fruit bags','Produce','west',22,'bags','Store cool and dry.',3],['Rice meal trays','Prepared meals','mcnary',14,'trays','Keep refrigerated.',1],['Baked rolls','Bakery','arnold',20,'bags','Store cool and dry.',-2],['Yogurt cups','Dairy','west',16,'items','Keep refrigerated.',-1],['Vegetable soup portions','Prepared meals','mcnary',20,'portions','Keep refrigerated.',-3],['Granola packets','Packaged','west',30,'items','Follow package directions.',-2] ];
+    foods.forEach(([title,category,organizationId,qty,unit,storage,end],i) => d.prepare('INSERT INTO listings VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(`seed-${i+1}`,organizationId,title,`${title} ready for community redistribution.`,category,qty,qty,unit,`${orgs.find(o=>o[0]===organizationId)?.[1]} pickup desk`,days(end-1),days(end),storage,'Ask source organization about allergens.',i===12 ? 1 : 0,now(),now()));
+    const records: [number,string,number,string,string][] = [[1,'pantry',5,'RESERVED','421681'],[2,'network',4,'RESERVED','421682'],[3,'mutual',3,'RESERVED','421683'],[4,'pantry',6,'RESERVED','421684'],[5,'pantry',3,'COMPLETED','421685'],[6,'network',2,'COMPLETED','421686'],[7,'mutual',4,'COMPLETED','421687'],[8,'pantry',2,'COMPLETED','421688'],[9,'network',3,'COMPLETED','421689'],[10,'mutual',2,'CANCELED','421690'],[11,'pantry',3,'CANCELED','421691']];
+    records.forEach(([index,org,qty,status,code],i) => {
+      const id=`seed-res-${i+1}`, listingId=`seed-${index}`;
+      d.prepare('INSERT INTO reservations VALUES (?,?,?,?,?,?,?,?,?,?)').run(id,listingId,org,qty,status,code,days(-5),status==='COMPLETED'?days(-4):null,status==='COMPLETED'?days(-3):null,status==='CANCELED'?days(-2):null);
+      if (status!=='CANCELED') d.prepare('UPDATE listings SET quantityAvailable=quantityAvailable-? WHERE id=?').run(qty,listingId);
+    });
+    addDemoSites(d);
+    log(d,'SEED','system','demo','Loaded fictional demonstration data');
+  });
+}
+export function resetDemo() { const d=db(); transaction(d,()=>{d.exec('DELETE FROM activity; DELETE FROM reservations; DELETE FROM listings; DELETE FROM organizations;');}); seed(d); }
+export function snapshot(): Snapshot {
+  const d=db();
+  const organizations=d.prepare('SELECT * FROM organizations ORDER BY name').all() as Organization[];
+  const listings=(d.prepare('SELECT l.*, o.name organizationName FROM listings l JOIN organizations o ON o.id=l.organizationId ORDER BY l.createdAt DESC, l.id').all() as (Listing & {closed:number})[]).map(({closed,...l})=>({...l,status:listingStatus(l.quantityAvailable,l.originalQuantity,l.pickupEnd,!!closed)}));
+  const reservations=d.prepare('SELECT r.*, l.title listingTitle, l.quantityUnit, l.pickupLocation, l.pickupStart, l.pickupEnd, o.name organizationName FROM reservations r JOIN listings l ON l.id=r.listingId JOIN organizations o ON o.id=r.organizationId ORDER BY r.createdAt DESC, r.id').all() as Reservation[];
+  const activity=d.prepare('SELECT * FROM activity ORDER BY id DESC LIMIT 30').all() as Activity[];
+  const completed=reservations.filter(r=>r.status==='COMPLETED'); const canceled=reservations.filter(r=>r.status==='CANCELED');
+  const units=new Map<string,number>(), categories=new Map<string,number>(), dates=new Map<string,number>();
+  completed.forEach(r=>{ const l=listings.find(x=>x.id===r.listingId)!; units.set(r.quantityUnit,(units.get(r.quantityUnit)||0)+r.quantity); const key=`${l.category}|${r.quantityUnit}`; categories.set(key,(categories.get(key)||0)+r.quantity); const day=r.collectedAt!.slice(0,10); dates.set(day,(dates.get(day)||0)+1); });
+  return { organizations,listings,reservations,activity,metrics:{completed:completed.length,canceled:canceled.length,active:listings.filter(l=>['AVAILABLE','PARTIALLY_RESERVED'].includes(l.status)).length,organizations:organizations.length,rate:completed.length+reservations.filter(r=>r.status==='RESERVED').length ? Math.round(completed.length/(completed.length+reservations.filter(r=>r.status==='RESERVED').length)*100):0,byUnit:[...units].map(([unit,quantity])=>({unit,quantity})),byCategory:[...categories].map(([key,quantity])=>({category:key.split('|')[0],unit:key.split('|')[1],quantity})),byDay:[...dates].sort().map(([day,count])=>({day,count}))} };
+}
+function requireOrg(d:DatabaseSync,id:string,type:string[]) { const org=d.prepare('SELECT type FROM organizations WHERE id=?').get(id) as {type:string}|undefined; if(!org||!type.includes(org.type)) throw new Error('Select a valid organization for this role'); }
+export function createListing(input: ListingInput) { const value=listingSchema.parse(input); const d=db(); requireOrg(d,value.organizationId,['DINING_FACILITY']); const id=crypto.randomUUID(),time=now(); d.prepare('INSERT INTO listings VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(id,value.organizationId,value.title,value.description,value.category,value.quantity,value.quantity,value.unit,value.pickupLocation,value.pickupStart,value.pickupEnd,value.storageRequirements,value.allergenInformation,0,time,time); log(d,'CREATE','listing',id,`Created ${value.title}`); return {id}; }
+export function editListing(id:string,org:string,input:ListingInput) { const value=listingSchema.parse(input); const d=db(); requireOrg(d,org,['DINING_FACILITY']); return transaction(d,()=>{ const row=d.prepare('SELECT * FROM listings WHERE id=? AND organizationId=?').get(id,org) as {originalQuantity:number;quantityAvailable:number;closed:number}|undefined; if(!row||row.closed) throw new Error('Listing unavailable'); const used=row.originalQuantity-row.quantityAvailable; if(value.quantity<used) throw new Error('Quantity below already reserved amount'); if(used>0 && value.unit!== (d.prepare('SELECT quantityUnit FROM listings WHERE id=?').get(id) as {quantityUnit:string}).quantityUnit) throw new Error('Cannot change unit after reservations'); d.prepare('UPDATE listings SET title=?, description=?, category=?, originalQuantity=?,quantityAvailable=?,quantityUnit=?,pickupLocation=?,pickupStart=?,pickupEnd=?,storageRequirements=?,allergenInformation=?,updatedAt=? WHERE id=?').run(value.title,value.description,value.category,value.quantity,value.quantity-used,value.unit,value.pickupLocation,value.pickupStart,value.pickupEnd,value.storageRequirements,value.allergenInformation,now(),id); log(d,'EDIT','listing',id,`Updated ${value.title}`); return {id}; }); }
+export function closeListing(id:string,org:string) {const d=db();requireOrg(d,org,['DINING_FACILITY']);const result=d.prepare('UPDATE listings SET closed=1,updatedAt=? WHERE id=? AND organizationId=? AND closed=0').run(now(),id,org);if(!result.changes)throw new Error('Listing unavailable');log(d,'CLOSE','listing',id,'Closed listing');}
+export function reserve(raw:unknown) {const value=reserveSchema.parse(raw),d=db();requireOrg(d,value.organizationId,['FOOD_PANTRY','REDISTRIBUTION_PARTNER']);return transaction(d,()=>{const l=d.prepare('SELECT * FROM listings WHERE id=?').get(value.listingId) as {quantityAvailable:number;originalQuantity:number;pickupEnd:string;closed:number}|undefined;if(!l||!['AVAILABLE','PARTIALLY_RESERVED'].includes(listingStatus(l.quantityAvailable,l.originalQuantity,l.pickupEnd,!!l.closed)))throw new Error('Listing is no longer available');const qty=remaining(l.quantityAvailable,value.quantity);d.prepare('UPDATE listings SET quantityAvailable=?,updatedAt=? WHERE id=?').run(qty,now(),value.listingId);const id=crypto.randomUUID(),code=String(crypto.getRandomValues(new Uint32Array(1))[0]%900000+100000);d.prepare('INSERT INTO reservations VALUES (?,?,?,?,?,?,?,?,?,?)').run(id,value.listingId,value.organizationId,value.quantity,'RESERVED',code,now(),null,null,null);log(d,'RESERVE','reservation',id,`Reserved ${value.quantity} units`);return {id,pickupCode:code};});}
+export function cancel(id:string,org:string) {const d=db();requireOrg(d,org,['FOOD_PANTRY','REDISTRIBUTION_PARTNER']);return transaction(d,()=>{const r=d.prepare('SELECT r.*,l.pickupEnd,l.closed FROM reservations r JOIN listings l ON l.id=r.listingId WHERE r.id=? AND r.organizationId=?').get(id,org) as {status:string;pickupEnd:string;closed:number;listingId:string;quantity:number}|undefined;if(!r||!canCancel(r.status,r.pickupEnd))throw new Error('Reservation cannot be canceled');d.prepare("UPDATE reservations SET status='CANCELED',canceledAt=? WHERE id=?").run(now(),id);if(!r.closed)d.prepare('UPDATE listings SET quantityAvailable=quantityAvailable+?,updatedAt=? WHERE id=?').run(r.quantity,now(),r.listingId);log(d,'CANCEL','reservation',id,'Canceled reservation');});}
+export function complete(id:string,org:string,code:string) {const d=db();requireOrg(d,org,['DINING_FACILITY']);return transaction(d,()=>{const r=d.prepare('SELECT r.*, l.organizationId owner FROM reservations r JOIN listings l ON l.id=r.listingId WHERE r.id=?').get(id) as {status:string;pickupCode:string;owner:string}|undefined;if(!r||r.owner!==org||!canComplete(r.status))throw new Error('Reservation cannot be completed');if(r.pickupCode!==code)throw new Error('Invalid pickup code');d.prepare("UPDATE reservations SET status='COMPLETED',confirmedAt=?,collectedAt=? WHERE id=?").run(now(),now(),id);log(d,'COMPLETE','reservation',id,'Pickup completed');});}

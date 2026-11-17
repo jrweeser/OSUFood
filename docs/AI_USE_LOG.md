@@ -1,0 +1,5 @@
+# AI use log
+
+AI coding assistant generated the initial Next.js/React interface, SQLite schema and data layer, automated tests, design, and draft course documentation. Human authors must review correctness, course requirements, visual quality, accessibility with assistive technology, operational and food-safety suitability, factual claims, possible partners, business assumptions, and practice patent text. No external AI API is used by the app.
+
+Verification performed by the assistant: TypeScript (`npm run typecheck`), ESLint (`npm run lint`), Vitest unit/integration tests (`npm test`), Playwright desktop/mobile journeys (`npm run test:e2e`), and production build (`npm run build`); actual counts and outcomes are in `TEST_RESULTS.md`. Automated tests do not substitute for a human usability study or real-world pilot. Seed data and analytics are simulated. Pickup dates are relative to seed time; do not interpret sample activity as real records. No external research sources or patent citations were generated.

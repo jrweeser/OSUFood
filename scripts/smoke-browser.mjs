@@ -1,0 +1,15 @@
+import { chromium } from '@playwright/test';
+const browser = await chromium.launch();
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', error => errors.push(`page: ${error.message}`));
+page.on('console', message => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
+await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded' });
+await page.getByRole('button', { name: /Explore the Demo/ }).click({ timeout: 10000 });
+await page.getByRole('heading', { name: 'Available food' }).waitFor({ timeout: 10000 }).catch(() => {});
+console.log('Browse heading:', await page.getByRole('heading', { name: 'Available food' }).isVisible());
+console.log('Headings:', await page.getByRole('heading').allTextContents());
+console.log('Listings:', await page.locator('article.food-card').count());
+console.log('Errors:', errors);
+await page.screenshot({ path: 'test-results/live-browse-smoke.png' });
+await browser.close();

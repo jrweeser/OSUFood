@@ -1,0 +1,17 @@
+import { z } from 'zod';
+
+export const categories = ['Produce','Prepared meals','Bakery','Dairy','Packaged'] as const;
+export const units = ['boxes','portions','items','bags','trays'] as const;
+export const roles = ['staff','pantry','admin'] as const;
+export const listingSchema = z.object({ title: z.string().trim().min(3).max(100), description: z.string().trim().min(3).max(1000), category: z.enum(categories), quantity: z.number().int().positive().max(10000), unit: z.enum(units), pickupLocation: z.string().trim().min(3).max(150), pickupStart: z.string().datetime(), pickupEnd: z.string().datetime(), storageRequirements: z.string().trim().max(500), allergenInformation: z.string().trim().max(500), organizationId: z.string().min(1) }).refine(v => new Date(v.pickupEnd) > new Date(v.pickupStart), { message: 'Pickup end must be after start', path: ['pickupEnd'] }).refine(v => new Date(v.pickupEnd) > new Date(), { message: 'Pickup must end in future', path: ['pickupEnd'] });
+export type ListingInput = z.infer<typeof listingSchema>;
+export const reserveSchema = z.object({ listingId: z.string().min(1), organizationId: z.string().min(1), quantity: z.number().int().positive().max(10000) });
+export function listingStatus(available: number, original: number, end: string, closed: boolean) { if (closed) return 'CLOSED'; if (new Date(end).getTime() <= Date.now()) return 'EXPIRED'; if (available === 0) return 'FULLY_RESERVED'; return available < original ? 'PARTIALLY_RESERVED' : 'AVAILABLE'; }
+export function canCancel(status: string, end: string) { return status === 'RESERVED' && new Date(end).getTime() > Date.now(); }
+export function canComplete(status: string) { return status === 'RESERVED'; }
+export function remaining(available: number, reserved: number) { if (!Number.isInteger(reserved) || reserved <= 0 || reserved > available) throw new Error('Quantity exceeds availability'); return available - reserved; }
+export type Organization = { id: string; name: string; type: string; description: string; location: string; createdAt: string };
+export type Listing = { id: string; organizationId: string; organizationName: string; title: string; description: string; category: string; quantityAvailable: number; originalQuantity: number; quantityUnit: string; pickupLocation: string; pickupStart: string; pickupEnd: string; storageRequirements: string; allergenInformation: string; status: string; createdAt: string; updatedAt: string };
+export type Reservation = { id: string; listingId: string; organizationId: string; organizationName: string; listingTitle: string; quantityUnit: string; quantity: number; status: string; pickupCode: string; pickupLocation: string; pickupStart: string; pickupEnd: string; createdAt: string; confirmedAt: string | null; collectedAt: string | null; canceledAt: string | null };
+export type Activity = { id: number; action: string; entityType: string; entityId: string; description: string; timestamp: string };
+export type Snapshot = { organizations: Organization[]; listings: Listing[]; reservations: Reservation[]; activity: Activity[]; metrics: { completed: number; canceled: number; active: number; organizations: number; rate: number; byUnit: { unit: string; quantity: number }[]; byCategory: { category: string; unit: string; quantity: number }[]; byDay: { day: string; count: number }[] } };
