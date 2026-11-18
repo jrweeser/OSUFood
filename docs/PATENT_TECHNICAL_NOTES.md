@@ -1,24 +1,83 @@
-# Practice patent technical notes
+# Practice Patent Technical Notes — OSU Food *After Hours*
 
-**Proposed title:** Coordinated Surplus-Food Listing and Pickup Confirmation System.
+*Technical documentation prepared for student teams completing the ENGR 110 practice patent assignment. This document provides technical description only and does not constitute legal counsel, an assertion of patentability, or an opinion on prior art.*
 
-**System overview:** a web interface and local transaction-backed datastore connect source organization listings to recipient reservations and pickup confirmations. This is an educational description, **not a novelty or patentability assertion**.
+---
 
-**Inputs:** organization identifier and type; food title/description/category; original quantity and unit; pickup place/time; handling and allergen information; selected reservation quantity; pickup code. **Processing:** server validates inputs, checks availability/window, serializes inventory changes, records reservation and activity, verifies code, derives status and aggregates completed quantities. **Outputs:** visible listing, remaining quantity, reservation ID/code, recorded pickup and grouped analytics.
+## 1. Proposed Invention Title
+**System and Method for Synchronized Two-Sided Surplus Food Allocation and Physical Handoff Verification**
 
-**Numbered architecture diagram**
+---
+
+## 2. Technical Field & System Overview
+The present technical disclosure relates to computerized inventory coordination and supply chain handoff management, and specifically to automated, transaction-serialized allocation of perishable surplus food between institutional kitchens and volunteer collection entities.
+
+The system includes:
+- A distributed web client interface accessible across desktop and mobile browsers.
+- An application server providing synchronous mutation validation and business rule execution.
+- A transaction-managed local datastore maintaining atomic consistency across perishable inventory items and verification tokens.
+
+---
+
+## 3. Numbered Architectural Component Diagram
 
 ```text
-[1] Source dining UI ── listing data ──> [3] Next.js mutation API ──> [4] SQLite records
-[2] Pantry UI ── reservation quantity ──> [3] ──transaction──> [4]
-[5] Pickup confirmation UI ── code ──> [3] ──status change──> [4]
-[4] ── completed records ──> [6] Impact aggregation ──> [1]/[2]/[5]
+       ┌────────────────────────────────────────────────────────┐
+       │              Client Interface Subsystem [100]          │
+       │                                                        │
+       │  [102] Dining Facility Portal (Surplus Creation/Edit)  │
+       │  [104] Recipient Pantry Portal (Filtered Reservation)   │
+       │  [106] Verification Console (Pickup Code Validation)   │
+       │  [108] Multi-Perspective Role State Selector           │
+       └───────────────────────────┬────────────────────────────┘
+                                   │ HTTP/JSON
+                                   ▼
+       ┌────────────────────────────────────────────────────────┐
+       │             Application Logic Subsystem [200]          │
+       │                                                        │
+       │  [202] Temporal Window & Expiration Engine             │
+       │  [204] Input Validation & Schema Parser (Zod)          │
+       │  [206] Nonce / Verification Code Generator             │
+       │  [208] Atomic Transaction Orchestrator                 │
+       │  [210] Unit-Separated Impact Analytics Aggregator       │
+       └───────────────────────────┬────────────────────────────┘
+                                   │ SQL / WAL Journaling
+                                   ▼
+       ┌────────────────────────────────────────────────────────┐
+       │                 Persistence Subsystem [300]            │
+       │                                                        │
+       │  [302] Institutional Entities Table (Dining / Pantries)│
+       │  [304] Perishable Inventory Record Table               │
+       │  [306] Allocation & Verification Token Table           │
+       │  [308] Immutable System Activity & Audit Trail         │
+       └────────────────────────────────────────────────────────┘
 ```
 
-**Potential differentiating aspects to investigate, not claims of novelty:** real-time partial reservation under serialized transactions; pickup-code confirmation coupled to inventory and unit-separated analytics; future handling disclosures and eligibility rules. Prior-art research and legal review are still required.
+---
 
-**Example practice claims (not legal advice):**
-1. A computer-implemented method comprising receiving a time-limited food listing with a quantity and unit, transactionally decrementing available quantity upon a recipient reservation not exceeding said quantity, and recording a pickup confirmation upon validation of a reservation-associated code.
-2. The method of claim 1, further comprising deriving expiration and availability status from the listing's pickup end and remaining quantity, and aggregating confirmed collections separately by quantity unit.
+## 4. Method of Operation (Sequential Processing Steps)
 
-**Research placeholder:** [Insert verified related-patent citations and search methods here]. Do not invent patent numbers.
+1. **Surplus Ingestion:** Kitchen client [102] transmits a surplus food record comprising item name, categorical tag, total initial quantity, quantity measurement unit, physical pickup desk location, and absolute start/end timestamps defining an active collection window.
+2. **Server-Side Validation:** Parser [204] verifies that the quantity is a positive integer, the end timestamp succeeds the start timestamp, and the end timestamp is future-relative. Record is committed to inventory table [304].
+3. **Atomic Reservation:** Recipient client [104] submits an allocation request for an integer quantity. Transaction orchestrator [208] executes a serialized transaction (`BEGIN IMMEDIATE`), verifies available quantity is greater than or equal to requested quantity, decrements remaining availability, generates a pseudo-random 6-digit numeric token, and commits a pending reservation record to [306].
+4. **Physical Handoff Verification:** Upon physical arrival at the kitchen, the recipient presents the token. Kitchen personnel enter the token into console [106]. Logic [200] matches the token against [306], marks the record as `COMPLETED`, locks the state against duplicate reuse, and sets completion timestamps.
+5. **Unit-Preserved Analytics:** Aggregator [210] parses completed records and computes total mass diverted, grouped strictly by distinct measurement units without cross-unit conflation.
+
+---
+
+## 5. Potential Practice Claims (Educational Exercise Only)
+
+1. A computer-implemented method for coordinated perishable food redistribution, comprising:
+   - receiving from a first client an inventory listing comprising a food identifier, a positive available quantity, a quantity unit, and a future temporal collection window;
+   - displaying the inventory listing to a plurality of second clients within the temporal collection window;
+   - executing an atomic database transaction responsive to a reservation request from one of the second clients to decrement the available quantity by a requested quantity and generate a unique verification token associated with the reservation; and
+   - updating the status of the reservation to completed upon receiving and validating the verification token from the first client, wherein duplicate verification attempts for the token are rejected.
+
+2. The method of claim 1, further comprising:
+   - deriving an active listing status selected from available, partially reserved, fully reserved, closed, or expired based on the available quantity, the temporal collection window, and a closure state; and
+   - aggregating completed reservations into redistribution metrics partitioned by the quantity unit.
+
+---
+
+## 6. Prior Art Research Notice
+*Note for students: Verified patent numbers and prior-art citations must be acquired from authoritative USPTO/Google Patents searches. No fictional patent citations have been generated.*

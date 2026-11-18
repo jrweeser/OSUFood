@@ -1,61 +1,147 @@
-# OSU Food After Hours
+# OSU Food *After Hours*
 
-**Good food. Better connections. Less waste.** A local academic prototype for coordinating surplus dining food with fictional pantry organizations. Not affiliated with or operated by Oregon State University.
+> **Good food. Better connections. Less waste.**  
+> A university engineering entrepreneurship prototype (ENGR 110 at Oregon State University) connecting campus dining centers with approved community food pantries to redistribute wholesome surplus food.
 
-## Requirements
+*Academic demonstration prototype. Not affiliated with, endorsed by, or operated by Oregon State University or University Housing & Dining Services (UHDS).*
 
-- Node.js 26+ (uses built-in `node:sqlite`; tested on 26.13.0), npm 11+.
-- Internet during initial `npm install` and optional Playwright browser installation; afterward the app needs no cloud service.
+---
 
-## Quick start
+## Overview
 
-```sh
+Edible surplus food is frequently discarded by campus dining facilities after service hours, while student-facing pantries and community food assistance organizations experience ongoing demand. **OSU Food *After Hours*** bridges this gap:
+
+1. **Dining staff** post surplus food with quantities, pickup windows, and handling guidance.
+2. **Pantry volunteers** browse real-time listings, filter by dining center and category, and reserve what they can redistribute.
+3. **Dining staff confirm pickups** with a verification code, closing the loop and recording verifiable impact.
+
+The platform models actual Oregon State University dining centers:
+- **McNary Dining Center** (East campus)
+- **Arnold Dining Center** (South campus)
+- **Marketplace West** (West campus)
+
+along with simulated student redistribution partner sites (e.g., *Campus Community Pantry — Memorial Union*, *Valley Library*, and *Residence Hall Area*).
+
+---
+
+## Quick Start
+
+### Prerequisites
+- **Node.js 20+** (tested on Node.js 26 with built-in `node:sqlite`)
+- **npm 10+**
+
+### Local Development
+```bash
+# 1. Install dependencies
 npm install
+
+# 2. Seed database with realistic relative-date records
 npm run seed
+
+# 3. Start development server
 npm run dev
 ```
 
-Open http://localhost:3000. If port 3000 is occupied, Next.js prints the selected port. Database defaults to `data/osufood.sqlite`. `.env.example` documents optional `DATABASE_PATH` (must point to a `.sqlite` file inside the project). The app creates and seeds a missing database automatically. `npm run seed` resets only this app's demo database; it replaces current demo records. Never point it at a database you wish to preserve. `data/` is ignored by Git and not publicly served.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Cloudflare Tunnel: local app on port 3000
+The database initializes automatically at `data/osufood.sqlite`. A custom database path can be specified via `DATABASE_PATH` in `.env` (see `.env.example`).
 
-This machine has a `cloudflared` tunnel connector and a Next.js development server listening at **localhost:3000**. The tunnel targets that server, **not** `cloudflare/index.html`. The real app needs the server running and `/api/state` and `/api/action` reachable through the same tunnel. Its views now have actual paths: `/browse`, `/listing/{id}`, `/reservations`, `/staff`, `/create`, `/pickups`, `/impact`, `/admin` and `/guide`. A copied `/browse` or listing link can be opened directly and refreshed. On localhost, the main routes and `/api/state` returned HTTP 200; test the Cloudflare hostname itself before relying on the demo.
+---
 
-**Important:** The tunnel makes the local demo publicly reachable if the route is public. Header role selection is not authentication, and the API accepts client-supplied organization identifiers, including a reset action. Do not put this app on a public domain without Cloudflare Access or real authentication and authorization. If Access protects the hostname, allow the actual testers only. The standalone `cloudflare/index.html` is an alternative for an entirely static Pages upload; it is **not used by this tunnel** and stores reservations only in each visitor's browser.
+## "Preview as" Role Switching
 
+To test the entire workflow without requiring an enterprise single-sign-on setup, use the **Preview as** dropdown in the top-right header:
 
-## Commands
+- **Student (demo ordering):**
+  - Browse available food by real dining-center name, view staff-set pickup window and instructions, and reserve at a simulated 50% discount from the entered original per-unit price.
+  - See a code and saved demo total under **My orders** (`/student/reservations`). No payment is collected, no order-ready alert is sent, and no live food pickup service is implied.
+- **Pantry Volunteer:**
+  - Browse available surplus food (`/browse`) with live text search, category filters, and campus site selectors.
+  - View detailed listing information (`/listing/:id`), select reservation quantities, and receive an instant 6-digit pickup code.
+  - Review active, completed, and canceled commitments under **My reservations** (`/reservations`).
+- **Dining Staff:**
+  - View active listings, pending pickups, and recent facility activity (`/staff`).
+  - Create new surplus listings with required quantities, original per-unit price, dining-center pickup dropdown, supervised pickup instructions, and future pickup windows (`/create`).
+  - Verify incoming volunteer pickup codes and mark handoffs completed (`/pickups`).
+- **Administrator:**
+  - Monitor platform-wide redistribution metrics and audit activity logs (`/admin`).
+  - Safely reset the demo environment back to clean sample data (`/admin`).
 
-| Command | Purpose |
+---
+
+## 90-Second Demonstration Script
+
+1. **Reset to Clean State:** In the header, select **Preview as: Administrator** → `/admin` → Click **Reset demo data**.
+2. **Post Surplus (Dining Staff):**
+   - Switch to **Preview as: Dining Staff** (`/staff`).
+   - Select **McNary Dining Center** and click **Create Food Listing** (`/create`).
+   - Enter `Fresh Produce Boxes`, 20 boxes, category *Produce*, pickup location `McNary Dining Center pickup desk`, and submit.
+3. **Reserve Food (Pantry Volunteer):**
+   - Switch to **Preview as: Pantry Volunteer** (`/browse`).
+   - Find `Fresh Produce Boxes`, click **View details**, select **5 boxes**, and click **Reserve food**.
+   - Note the **6-digit pickup code** and verify available inventory drops from 20 to 15.
+4. **Confirm Collection (Dining Staff):**
+   - Switch to **Preview as: Dining Staff** → **Pickups** (`/pickups`).
+   - Locate the reservation for `Fresh Produce Boxes`, input the volunteer's pickup code, and click **Confirm pickup**.
+5. **Verify Impact:**
+   - Navigate to **Impact** (`/impact`).
+   - Confirm completed pickup count increments and redistributed units update with strict unit separation.
+
+*(See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for full speaker notes and recovery procedures.)*
+
+---
+
+## Deployment & Cloudflare Setup
+
+### Running via Cloudflare Tunnel (Recommended for Live Demo)
+If exposing your local instance over a Cloudflare Tunnel (e.g., via `cloudflared` connecting to `localhost:3000`):
+- All routes (`/browse`, `/staff`, `/reservations`, `/impact`, etc.) and API endpoints (`/api/state`, `/api/action`) run live against the local SQLite database.
+- Deep links and browser refreshes work natively through Next.js App Router routing.
+- *Security Note:* Ensure your Cloudflare Tunnel is protected via Cloudflare Access so public visitors cannot trigger administrative reset actions.
+
+### Standalone Offline HTML Demo (`cloudflare/index.html`)
+For static hosting environments (such as static Cloudflare Pages with no Node.js runtime):
+- Upload the `cloudflare/` directory as your static site.
+- `cloudflare/index.html` is a zero-dependency, self-contained single-file HTML/CSS/JS version with client-side localStorage simulation.
+
+---
+
+## Available Commands
+
+| Command | Description |
 |---|---|
-| `npm run dev` | Development server |
-| `npm run build` / `npm run start` | Build / run production server |
-| `npm run seed` | Reset to deterministic relative-date sample records |
-| `npm run typecheck` | TypeScript check |
-| `npm run lint` | ESLint |
-| `npm test` | Vitest unit + SQLite integration tests, separate `data/osufood-test.sqlite` |
-| `npx playwright install chromium` | Install local browser once |
-| `npm run test:e2e` | Desktop + mobile Chromium journeys, separate `data/osufood-e2e.sqlite` |
+| `npm run dev` | Start Next.js development server on port 3000 |
+| `npm run build` | Compile optimized production build with Next.js Turbopack |
+| `npm run start` | Run production server |
+| `npm run seed` | Seed local SQLite database with deterministic relative-date records |
+| `npm run typecheck` | Run TypeScript validation (`tsc --noEmit`) |
+| `npm run lint` | Run ESLint checks |
+| `npm test` | Run Vitest unit & database integration test suite |
+| `npm run test:e2e` | Run Playwright end-to-end tests across desktop & mobile viewports |
 
-## Product tour
+---
 
-- **Landing page**: Shows three real, fictional seeded listings with pickup windows and clickable View details buttons; hero shows sample listing and completed-pickup counts.
-- **Dining Staff**: Overview → Create Food Listing → edit/close own listings → Pickups to enter code and complete pickup.
-- **Pantry Volunteer**: Browse food with search/category/source/time filters and clearly separated pickup dates/times → choose a fictional campus-site pantry or partner → View details → reserve quantities → My reservations to review code and cancel. Memorial Union, Valley Library and residence hall area are illustrative campus areas, not verified pickup services.
-- **Administrator**: Demo controls → activity log and confirmed demo reset.
-- **Impact**: recorded completed pickups, unit-separated quantities and charts; seeded examples are not real-world impact.
-- **Demo guide**: a five-step script directly in the interface.
+## Architecture & Technology Stack
 
-Start the local server and wait for the listing count to appear; the page initially shows a loading message while fetching the SQLite-backed demo. Buttons update the view and address bar without a full reload; each main view has a direct URL. Choose **Preview as** in the header (desktop and mobile) to switch between staff, pantry and admin demo views. This is not a login or secure authentication. Choosing a facility or pantry within the role is also a simulation. **Do not expose the app on a public network.**
+- **Framework:** Next.js 16 (App Router) with React 19 & TypeScript
+- **Styling:** Tailwind CSS 4 with Oregon State University inspired brand colors (heritage orange, deep charcoal, warm neutral panels)
+- **Database:** Local SQLite utilizing Node.js built-in `node:sqlite` with `BEGIN IMMEDIATE` serialized transactions for atomic reservation bookings
+- **Validation:** Zod schemas enforcing positive quantities and future pickup windows
+- **Icons:** Lucide React
+- **Testing:** Vitest (unit & integration) + Playwright (cross-device browser automation)
 
-## 90-second demonstration
+For in-depth technical documentation, see the [`docs/`](docs/) directory:
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): System architecture, schema diagrams, and transaction consistency rules
+- [`docs/APP_FEATURES.md`](docs/APP_FEATURES.md): Catalog of implemented UI features and page routes
+- [`docs/TEST_RESULTS.md`](docs/TEST_RESULTS.md): Course-required test verification report
+- [`docs/BUSINESS_PLAN_TECHNICAL_NOTES.md`](docs/BUSINESS_PLAN_TECHNICAL_NOTES.md): Technical assumptions and pilot metrics for ENGR 110 business planning
+- [`docs/PATENT_TECHNICAL_NOTES.md`](docs/PATENT_TECHNICAL_NOTES.md): Technical description and practice claims for course patent writing
+- [`docs/AI_USE_LOG.md`](docs/AI_USE_LOG.md): Transparent disclosure of AI assistance and human verification steps
 
-Reset via Administrator → Demo controls, then select Dining Staff / North Campus Dining. Create “Fresh Produce Boxes,” 20 boxes, future pickup window, North Campus Dining pickup desk. Switch to Pantry Volunteer / Campus Community Pantry, search for it, reserve five boxes and note the six-digit pickup code. Confirm 15 remain; switch back to staff → Pickups, enter the code and confirm. Impact: completed pickups 5 → 6, boxes 0 → 5. Full sequence and recovery in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
+---
 
-## Architecture
+## Prototype Limitations & Food Safety
 
-Next.js 16 App Router + React 19 + TypeScript + Tailwind 4, Zod 4 for server validation, and Node's built-in SQLite. Client UI sends changes to `/api/action`, which invokes domain rules and synchronous `BEGIN IMMEDIATE` SQLite transactions; `/api/state` returns derived listing status and analytics. Built-in SQLite was chosen over Prisma to avoid ORM/native-addon compatibility and keep this Node 26 demo small. No managed services required. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-## Prototype limitations
-
-No real identities, secure authorization, food-safety checks, official partner verification, notifications, audit-grade identity trails, or production concurrency across hosts. Anyone who can send HTTP requests to this local app can claim an organization and invoke the demo reset; never deploy it publicly without real authentication/authorization. Handling and allergen disclosures are supplied by listing organizations and not independently verified. Live inventory and status are derived from local records, but completed example reservations have artificial history. Pickup codes are shown to the volunteer and to staff in the demo; this is a demonstration aid, not a secure proof of collection. No actual pilot-study outcomes have been measured.
+- **Not Authentication:** Role switching is a prototype demonstration tool. Production deployments require single sign-on, identity verification, and role-based access control.
+- **No Food Safety Certification:** The application is an information coordination tool. Allergen and storage guidelines are organization-supplied. Actual food redistribution requires adherence to state health codes, temperature controls, and organizational liability agreements outside the app.
+- **Fictional Data:** All metrics, partner names, inventory records, and prices are simulated for classroom demonstration purposes. Real dining-center names label example pickup areas, not verified desks or active services. The static `cloudflare/index.html` demo does not include student ordering.
