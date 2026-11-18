@@ -3,7 +3,7 @@ import SwiftUI
 @main
 struct OSUFoodApp: App {
     @State private var store = AppStore()
-    @State private var selectedTab: AppTab = .home
+    @State private var selectedTab: AppTab = .browse
     @State private var editingListing: Listing?
     @State private var showEditor = false
 
@@ -101,13 +101,13 @@ struct OSUFoodApp: App {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(FoodStyle.ink)
                         .padding(.horizontal, 10).padding(.vertical, 9)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 10))
+                        .background(FoodStyle.surface, in: RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(FoodStyle.border))
                     }
                     .accessibilityLabel("Preview as \(store.role.label). Not a login.")
                 }
                 .padding(.horizontal, 16).padding(.vertical, 7)
-                .background(.white)
+                .background(FoodStyle.surface)
                 .overlay(alignment: .bottom) { FoodStyle.border.frame(height: 1) }
             }
             .overlay(alignment: .top) {
@@ -126,9 +126,9 @@ struct OSUFoodApp: App {
             }
             .overlay {
                 if store.isLoading && store.snapshot == nil {
-                    ProgressView("Loading local demo…")
+                    ProgressView("Loading demo…")
                         .padding(24)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 14))
+                        .background(FoodStyle.surface, in: RoundedRectangle(cornerRadius: 14))
                 }
             }
             .sheet(isPresented: $showEditor) {

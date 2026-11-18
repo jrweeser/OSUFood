@@ -14,6 +14,7 @@
 		74152D2C584392B9FB23E63F /* OverviewViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F7C347DCD541BDBBD26B2B /* OverviewViews.swift */; };
 		758B3BEA4C1A39E488B20787 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9312F69DC9955277BC31AEC /* AppStore.swift */; };
 		7D8D23E9E16E61BF7F7E450E /* OSUFoodApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99553C91B8361EDA895E63CB /* OSUFoodApp.swift */; };
+		BEB32518FCF16571F87DC0E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DC742A5CFB3CD87D6E33E0E1 /* Assets.xcassets */; };
 		D2ABD4C1F9D9C61FD2C9D53A /* Snapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BAE0C628E9A39E08D31215 /* Snapshot.swift */; };
 /* End PBXBuildFile section */
 
@@ -25,7 +26,8 @@
 		D1F7C347DCD541BDBBD26B2B /* OverviewViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewViews.swift; sourceTree = "<group>"; };
 		D7BAE0C628E9A39E08D31215 /* Snapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snapshot.swift; sourceTree = "<group>"; };
 		D9DDED33899654E453D57017 /* DiscoveryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryViews.swift; sourceTree = "<group>"; };
-		DCF656CD5150F333CEEA144C /* OSUFood.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OSUFood.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC742A5CFB3CD87D6E33E0E1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		DCF656CD5150F333CEEA144C /* OSUFood.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OSUFood.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE67DB7EE02737D4091D4399 /* StaffViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffViews.swift; sourceTree = "<group>"; };
 		E91434FE82C941D50D54B079 /* ActionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRequest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -52,6 +54,7 @@
 		37B886F6B2E92DE98C77BB44 /* OSUFood */ = {
 			isa = PBXGroup;
 			children = (
+				DC742A5CFB3CD87D6E33E0E1 /* Assets.xcassets */,
 				B470AE3F1E55B93CC0D1B788 /* Info.plist */,
 				99553C91B8361EDA895E63CB /* OSUFoodApp.swift */,
 				2B8569140BFBDAB0354CEC39 /* Models */,
@@ -95,6 +98,7 @@
 			buildConfigurationList = 37C57F96E12A39B3CE686CB6 /* Build configuration list for PBXNativeTarget "OSUFood" */;
 			buildPhases = (
 				CFCD26A7507EB5EC5E762DD8 /* Sources */,
+				59A5FA1756A6C2575202CB32 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -117,7 +121,6 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					3395280D90425E0C28086711 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -140,6 +143,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		59A5FA1756A6C2575202CB32 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BEB32518FCF16571F87DC0E9 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		CFCD26A7507EB5EC5E762DD8 /* Sources */ = {

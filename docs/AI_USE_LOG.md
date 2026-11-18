@@ -1,6 +1,6 @@
 # AI Use Disclosure & Verification Log — OSU Food *After Hours*
 
-*Prepared in compliance with ENGR 110 academic integrity and AI collaboration disclosure standards at Oregon State University.*
+*AI-assistance disclosure for this academic demonstration prototype.*
 
 ---
 
@@ -18,7 +18,7 @@
 | **Architecture & Database** | Schema definition, SQLite `node:sqlite` transaction logic, and seed data generators. | Unit and concurrency integration tests (`src/lib/db.test.ts`), manual schema inspection. |
 | **User Interface & Routing** | Next.js 16 App Router pages, Tailwind CSS responsive layouts, and interactive state management. | Automated Playwright browser tests (`e2e/workflow.spec.ts`) across desktop and mobile viewports. |
 | **Dining Research** | Official retrieval of OSU Corvallis dining centers (McNary, Arnold, Marketplace West). | Direct citation and fact-checking against official UHDS web pages (`uhds.oregonstate.edu/all-stories/explore-campus-dining`). |
-| **Course Documentation** | Draft technical patent notes, demo script, business plan assumptions, and architecture diagrams. | Cross-checked against course prompt guidelines; disclaimers added stating claims are hypothetical exercises. |
+| **Project Documentation** | Draft technical patent notes, demo script, business plan assumptions, and architecture diagrams. | Reviewed against project scope; disclaimers added stating claims are hypothetical exercises. |
 
 ---
 
@@ -36,8 +36,8 @@ The following programmatic quality checks were executed and confirmed passing in
 
 ## 4. Human Verification & Peer Review Responsibilities
 
-The student engineering team must conduct the following human evaluations prior to final presentation:
+Human reviewers should conduct the following evaluations before any presentation or pilot:
 1. **Live Usability Testing:** Rehearse the 90-second demo script with a human speaker to verify pacing and narrative flow.
 2. **Business Plan Alignment:** Review financial assumptions, pilot metrics, and operational feasibility against team goals.
-3. **Patent Claim Review:** Confirm practice patent claims reflect the team's intended scope for the course assignment.
+3. **Patent Claim Review:** Confirm the practice claims reflect the intended scope of the exercise.
 4. **Food Safety Oversight:** Validate that prototype handling instructions align with institutional guidelines and state food-safety standards.

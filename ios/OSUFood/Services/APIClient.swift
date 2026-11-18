@@ -1,13 +1,13 @@
 import Foundation
 
-// localhost reaches the host Mac from iOS Simulator; a physical device needs a reachable host URL.
 final class APIClient: Sendable {
-    static let simulatorURL = URL(string: "http://localhost:3000")!
+    // Replace with the HTTPS URL of a full-stack demo server before using the iOS client.
+    static let websiteURL = URL(string: "https://example.com")!
 
     let baseURL: URL
     private let session: URLSession
 
-    init(baseURL: URL = APIClient.simulatorURL, session: URLSession = .shared) {
+    init(baseURL: URL = APIClient.websiteURL, session: URLSession = .shared) {
         self.baseURL = baseURL
         self.session = session
     }
@@ -75,7 +75,7 @@ final class APIClient: Sendable {
         } catch let error as URLError {
             switch error.code {
             case .cannotConnectToHost, .cannotFindHost, .notConnectedToInternet, .networkConnectionLost, .timedOut:
-                throw APIClientError.connection("Cannot reach \(baseURL.host ?? "server") at \(baseURL.absoluteString). Start the local web server, or use a reachable host URL on a device. (\(error.localizedDescription))")
+                throw APIClientError.connection("Cannot reach \(baseURL.host ?? "server") at \(baseURL.absoluteString). Check your internet connection or the website's availability. (\(error.localizedDescription))")
             default:
                 throw APIClientError.connection("Network request failed: \(error.localizedDescription)")
             }

@@ -26,10 +26,6 @@ targets:
       properties:
         CFBundleDisplayName: Food After Hours
         UILaunchScreen: {}
-        NSAppTransportSecurity:
-          NSAllowsLocalNetworking: true
-        NSLocalNetworkUsageDescription: Connect to the local classroom demo server to show listings and reservations.
-        UIUserInterfaceStyle: Light
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

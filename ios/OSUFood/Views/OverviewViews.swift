@@ -2,13 +2,26 @@ import SwiftUI
 
 // The colors are inspired by the web prototype; the app does not claim university affiliation.
 enum FoodStyle {
-    static let background = Color(red: 250/255, green: 247/255, blue: 243/255)
-    static let ink = Color(red: 37/255, green: 35/255, blue: 33/255)
-    static let muted = Color(red: 99/255, green: 94/255, blue: 88/255)
-    static let accent = Color(red: 196/255, green: 79/255, blue: 17/255)
-    static let border = Color(red: 228/255, green: 217/255, blue: 207/255)
-    static let peach = Color(red: 255/255, green: 243/255, blue: 233/255)
-    static let green = Color(red: 38/255, green: 112/255, blue: 91/255)
+    private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            let rgb = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: CGFloat((rgb >> 16) & 0xff) / 255,
+                           green: CGFloat((rgb >> 8) & 0xff) / 255,
+                           blue: CGFloat(rgb & 0xff) / 255, alpha: 1)
+        })
+    }
+
+    static let hero = Color(red: 20/255, green: 20/255, blue: 20/255)
+    static let background = adaptive(0xF7F7F5, 0x101010)
+    static let surface = adaptive(0xFFFFFF, 0x1C1C1C)
+    static let ink = adaptive(0x181818, 0xFAF8F6)
+    static let muted = adaptive(0x535353, 0xBDBDBD)
+    static let accent = adaptive(0xB63200, 0xFF8A50)
+    static let chartOrange = adaptive(0xD73F09, 0xD96532)
+    static let buttonInk = adaptive(0xFFFFFF, 0x141414)
+    static let border = adaptive(0xDDD5CD, 0x3D3530)
+    static let track = adaptive(0xECE7E2, 0x35302D)
+    static let green = adaptive(0x26705B, 0x71D3AB)
 }
 
 struct FoodCard<Content: View>: View {
@@ -17,7 +30,7 @@ struct FoodCard<Content: View>: View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(18)
-            .background(.white, in: RoundedRectangle(cornerRadius: 17))
+            .background(FoodStyle.surface, in: RoundedRectangle(cornerRadius: 17))
             .overlay(RoundedRectangle(cornerRadius: 17).stroke(FoodStyle.border))
     }
 }
@@ -73,7 +86,7 @@ struct ImpactView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("DATA FROM THIS LOCAL DEMO")
+                Text("DATA FROM THE SHARED DEMO")
                     .font(.caption.weight(.bold)).tracking(2).foregroundStyle(FoodStyle.accent)
                 Text("Impact at a glance").font(.largeTitle.weight(.bold))
                 Text("Seeded demonstration values plus actions made in this prototype. Not observed real-world outcomes.")
@@ -137,8 +150,8 @@ private struct ChartCard: View {
                             .font(.caption)
                             GeometryReader { geometry in
                                 ZStack(alignment: .leading) {
-                                    Capsule().fill(Color(red: 241/255, green: 238/255, blue: 231/255))
-                                    Capsule().fill(FoodStyle.accent)
+                                    Capsule().fill(FoodStyle.track)
+                                    Capsule().fill(FoodStyle.chartOrange)
                                         .frame(width: max(row.1 == 0 ? 0 : 4, geometry.size.width * CGFloat(row.1) / CGFloat(maximum)))
                                 }
                             }
@@ -172,7 +185,7 @@ struct AdminView: View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("PROTOTYPE ADMINISTRATION").font(.caption.weight(.bold)).tracking(2).foregroundStyle(FoodStyle.accent)
                 Text("Demo controls").font(.largeTitle.weight(.bold))
-                Text("These controls affect the shared local demonstration database. This preview role is not authentication.")
+                Text("These controls affect the shared online demonstration database. This preview role is not authentication.")
                     .foregroundStyle(FoodStyle.muted)
                 if let snapshot = store.snapshot {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -275,7 +288,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("A BETTER PATH FOR SURPLUS FOOD")
-                        .font(.caption.weight(.bold)).tracking(2).foregroundStyle(.orange)
+                        .font(.caption.weight(.bold)).tracking(2).foregroundStyle(Color(red: 1, green: 0.54, blue: 0.31))
                     Text("Good food.\nBetter connections.\nLess waste.")
                         .font(.system(size: 38, weight: .bold)).foregroundStyle(.white)
                     Text("A classroom prototype for connecting dining-center surplus with fictional pantry partners and students after hours.")
@@ -286,10 +299,11 @@ struct HomeView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(FoodStyle.accent)
+                    .foregroundStyle(FoodStyle.buttonInk)
                 }
                 .padding(24)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(FoodStyle.ink, in: RoundedRectangle(cornerRadius: 20))
+                .background(FoodStyle.hero, in: RoundedRectangle(cornerRadius: 20))
                 if let snapshot = store.snapshot {
                     Text("Available now").font(.title2.bold())
                     Text("Fictional sample listings, ordered by pickup deadline.").foregroundStyle(FoodStyle.muted)

@@ -14,7 +14,7 @@ final class AppStore {
     private(set) var isLoading = false
     private(set) var isPerformingAction = false
     private(set) var errorMessage: String?
-    var role: UserRole = .pantry {
+    var role: UserRole = .student {
         didSet {
             if role != oldValue {
                 selectedOrganizationID = switch role {
@@ -26,7 +26,7 @@ final class AppStore {
             }
         }
     }
-    var selectedOrganizationID: String? = "pantry"
+    var selectedOrganizationID: String? = "student"
 
     private let api: APIClient
 

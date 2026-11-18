@@ -83,7 +83,7 @@ struct BrowseView: View {
                 }
                 .tint(FoodStyle.accent)
                 .padding(16)
-                .background(.white, in: RoundedRectangle(cornerRadius: 17))
+                .background(FoodStyle.surface, in: RoundedRectangle(cornerRadius: 17))
 
                 Text("\(listings.count) available listing\(listings.count == 1 ? "" : "s")")
                     .font(.subheadline).foregroundStyle(FoodStyle.muted)
@@ -220,6 +220,7 @@ struct ListingDetailView: View {
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.borderedProminent).tint(FoodStyle.accent)
+                                .foregroundStyle(FoodStyle.buttonInk)
                                 .disabled(store.isPerformingAction || store.selectedOrganizationID == nil || quantity > listing.quantityAvailable)
                             }
                             if let actionError {

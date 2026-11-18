@@ -1,6 +1,6 @@
 # Verified test results
 
-Run on **2026-11-17**, macOS Darwin 27.2.0, Node 26.13.0, npm 11.20.0, Chromium from Playwright 1.65.1. Tester: **AI coding assistant running automated checks**, not a human participant. Commands: `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`, `npm run build`, `npm run seed`.
+Automated checks were run on macOS with Node.js and Playwright Chromium. Tester: **AI coding assistant running automated checks**, not a human participant. Commands: `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`, `npm run build`, `npm run seed`. Counts below describe the recorded checks, not a fresh test of every future commit.
 
 | Check | Test description | Expected behavior | Observed behavior | Result | Corrections and retest |
 |---|---|---|---|---|---|
@@ -10,20 +10,16 @@ Run on **2026-11-17**, macOS Darwin 27.2.0, Node 26.13.0, npm 11.20.0, Chromium 
 
 **First-version baseline (before Test 1 feedback):** TypeScript passed; ESLint passed with no issues; Vitest **10/10 passed across 2 files**; Playwright **6/6 passed across desktop/mobile**; production `next build` passed; seed contained **6 fictional organizations, 14 listings, 11 reservations**. Production dependency audit (`npm audit --omit=dev --json`) reported **0 production vulnerabilities** at the time checked. Full install reported **16 high-severity dev-dependency audit findings**; they were not resolved or individually triaged and should be reviewed before further distribution. Vitest logged a non-failing future native-config warning.
 
-## Tunnel clarification and multi-page routing — 2026-11-17
+## Tunnel clarification and multi-page routing
+During testing, a Cloudflare Tunnel connector and Next.js server were running locally on port 3000. The Cloudflare link uses that local origin, so the separately created static `cloudflare/index.html` is not served by that tunnel. Moved the shared UI into `src/components/app.tsx` and added real Next.js pages for `/browse`, `/listing/[id]`, `/reservations`, `/staff`, `/create`, `/pickups`, `/impact`, `/admin`, and `/guide`. Browser navigation now updates the path, direct links/reloads work, and back navigation was tested. At the local origin `/`, `/browse`, `/reservations`, `/staff`, `/impact`, and `/api/state` all returned HTTP 200. Verification: TypeScript/lint/build passed; **11/11** Vitest and **14/14** desktop/mobile Playwright passed. The public Cloudflare hostname and its access settings were not inspected; the live tunnel may expose unauthenticated demo mutations, so do not rely on it for public use until access protection is verified.
 
-Found a running `cloudflared tunnel run --token-file …` connector and Next.js server on port 3000. The Cloudflare link uses that local origin, so the separately created static `cloudflare/index.html` is not served by that tunnel. Moved the shared UI into `src/components/app.tsx` and added real Next.js pages for `/browse`, `/listing/[id]`, `/reservations`, `/staff`, `/create`, `/pickups`, `/impact`, `/admin`, and `/guide`. Browser navigation now updates the path, direct links/reloads work, and back navigation was tested. At the local origin `/`, `/browse`, `/reservations`, `/staff`, `/impact`, and `/api/state` all returned HTTP 200. Verification: TypeScript/lint/build passed; **11/11** Vitest and **14/14** desktop/mobile Playwright passed. The public Cloudflare hostname and its access settings were not inspected; the live tunnel may expose unauthenticated demo mutations, so do not rely on it for public use until access protection is verified.
-
-## Static Cloudflare demo and branding follow-up — 2026-11-17
-
+## Static Cloudflare demo and branding follow-up
 Renamed header/title to OSU Food *After Hours* and replaced the ambiguous “Simulation role” label with “Preview as” plus a note that it is not a login. Diagnosed that a static Cloudflare upload cannot run the Next.js `/api/state` and `/api/action` SQLite-backed endpoints; created `cloudflare/index.html` as a separate self-contained browser-only demo. Tested static HTML directly from its file URL on desktop and mobile: browse, reserve, invalid/valid pickup code, reload persistence, impact, and reset all passed. The local Next.js journey still passed. Final verification below; Cloudflare domain was **not deployed or checked**, and browser-only demo state is not shared between visitors.
 
-## Live-app button and sample-data follow-up — 2026-11-17
-
+## Live-app button and sample-data follow-up
 User reported unresponsive buttons. Direct browser interaction against the already-running local development server confirmed the hero Explore button opens the pantry browser with **10** available sample listings; `/api/state` returned **11** fictional organizations, **14** listings, and **11** reservations. The precise cause of the reported failure could not be reproduced. Landing page now surfaces three active sample listings, an up-to-date sample inventory count, clickable details and a browse-all action. Fixed a regression caught by browser tests: opening a listing from within the pantry browser must preserve the selected pantry-site organization; only landing-page entry selects the default. Browser test added for landing controls and details. Final checks: TypeScript, lint, build, **11/11** unit/integration and **10/10** desktop/mobile browser checks passed. Main database was not reset. UI navigation updates the page without changing the URL; no deployment was performed.
 
-## Test 1 feedback update — 2026-11-17
-
+## Test 1 feedback update
 - **Design / date and time:** Pickup windows now appear in bordered orange callouts with separate **From** and **Until** dates and times on listing cards, details, reservations, and staff overview. The palette shifts toward OSU-inspired orange, charcoal, and warm neutral colors without asserting affiliation. Inspected desktop/mobile browse screenshots under `docs/screenshots/`.
 - **Pantry dropdown:** Added five fictional location-specific pantry choices for Memorial Union, Valley Library, and residence hall area, while retaining existing organizations and reservations in the demo database. These are examples, not verified operational pantry sites or partnerships. Integration test verifies choices; desktop/mobile browser tests reserve successfully under a specific site.
 - **Retest:** TypeScript passed, ESLint passed, **11/11 Vitest**, **8/8 Playwright** across desktop and mobile, production build passed. A mobile card click was initially intercepted by content after the new pickup panel increased its height; fixed card flex sizing and retested. Browser screenshots show the updated browse UI. The existing main database was **not reset** for this update; no new seed command was run.

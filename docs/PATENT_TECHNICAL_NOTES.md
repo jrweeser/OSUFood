@@ -1,6 +1,6 @@
 # Practice Patent Technical Notes — OSU Food *After Hours*
 
-*Technical documentation prepared for student teams completing the ENGR 110 practice patent assignment. This document provides technical description only and does not constitute legal counsel, an assertion of patentability, or an opinion on prior art.*
+*Technical notes for a practice patent exercise. This document provides technical description only and does not constitute legal counsel, an assertion of patentability, or an opinion on prior art.*
 
 ---
 

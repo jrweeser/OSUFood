@@ -1,6 +1,6 @@
 # Business Plan Technical Notes — OSU Food *After Hours*
 
-*Technical documentation prepared for ENGR 110 university engineering entrepreneurship business plan authors.*
+*Technical notes for an academic prototype business-plan exercise.*
 
 ---
 

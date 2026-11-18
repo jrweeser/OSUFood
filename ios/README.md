@@ -4,17 +4,16 @@ Native SwiftUI companion to the Next.js demonstration in this repository. This i
 
 ## Open in Xcode
 
-1. On your Mac, run `npm install` (if needed), then `npm run dev` in the repository root. Keep the Node server running; it serves the existing SQLite database and `/api/state` and `/api/action`.
-2. Open `ios/OSUFood.xcodeproj` in Xcode 27 or later.
-3. Select the **OSUFood** scheme and an iOS 18+ simulator, then press Run. The simulator connects to `http://localhost:3000`. To use a physical device, change the URL passed to `APIClient(baseURL:)` to an HTTPS server reachable by that device; `localhost` on a device is the device itself. An HTTPS deployment must serve the full Next.js Node backend, not the separate static Cloudflare HTML file.
-4. The app initially opens in Pantry Volunteer preview. Use the top role menu to explore Student, Dining Staff and Administrator flows. Pull down on a screen to refresh its data.
+1. Edit `OSUFood/Services/APIClient.swift` and replace the placeholder `https://example.com` in `websiteURL` with the HTTPS origin of a full-stack demo server that serves `/api/state` and `/api/action`. Do not enter a static-site URL: `cloudflare/index.html` has no API. Do not commit a personal hostname or private backend address; restore the placeholder before publishing.
+2. Open `ios/OSUFood.xcodeproj` in Xcode 27 or later. Select the **OSUFood** scheme and an iOS 18+ simulator or device, then press Run. If running on a physical device, select your own signing team in Xcode; the shared project has no personal signing team. Without a configured backend, the app displays a connection error.
+3. The app initially opens on Browse in Student preview. Use the top role menu to explore Pantry Volunteer, Dining Staff and Administrator flows. Pull down on a screen to refresh its data. Appearance follows the device's light or dark setting.
 
 To regenerate the project after adding Swift files, install [XcodeGen](https://github.com/yonaskolb/XcodeGen) and run `xcodegen generate --spec ios/project.yml --project ios`. The generated `.xcodeproj` is included so XcodeGen is **not** required just to open or build the project. Build products and user settings should stay out of version control.
 
 ## Architecture
 
-`OSUFood/Models` decodes the complete API snapshot and encodes validated action payloads; `Services` uses URLSession and refreshes the snapshot after mutations. `Views` contains native discovery, reservations, staff operations, impact, admin controls and guide. Actions are executed against the same local SQLite-backed Next.js API as the web interface. Nothing is stored as separate iOS inventory, and there is no offline transaction queue.
+`OSUFood/Models` decodes the complete API snapshot and encodes validated action payloads; `Services` uses URLSession and refreshes the snapshot after mutations. `Views` contains native discovery, reservations, staff operations, impact, admin controls and guide. Once configured, actions use the same Next.js API as the web interface. Nothing is stored as separate iOS inventory, and there is no offline transaction queue.
 
-The current API has no authentication and exposes all reservation codes to callers. Do **not** expose the server publicly or use this app for real reservations without implementing server-side identity, scoped reads, authorization, safe pickup verification, food-safety policies and an appropriately secured deployment. Administrator reset deletes all demo changes after confirmation.
+The current API has no authentication and exposes all reservation codes to callers. **If the configured server is publicly reachable, anyone can read demo data and call mutation endpoints, including reset.** Do not use real personal data or real reservations; implement server-side identity, scoped reads, authorization, safe pickup verification and food-safety policies before any real-world use. Administrator reset deletes all demo changes after confirmation in the app, but the API itself has no access control.
 
-The `NSAllowsLocalNetworking` transport exception permits the local simulator HTTP server for classroom testing; configure HTTPS for any remotely reachable backend. All example dining center names, prices, pantry sites and pickup instructions are fictional and not approved service locations.
+The default connection uses HTTPS and does not require a local-network transport exception. The app icon is in `OSUFood/Assets.xcassets/AppIcon.appiconset`. All example dining center names, prices, pantry sites and pickup instructions are fictional and not approved service locations.

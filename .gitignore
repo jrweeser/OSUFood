@@ -59,6 +59,8 @@ ehthumbs.db
 Thumbs.db
 
 # IDEs and Editors
+**/xcuserdata/
+*.xcuserstate
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
