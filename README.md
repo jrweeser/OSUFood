@@ -24,6 +24,12 @@ along with simulated student redistribution partner sites (e.g., *Campus Communi
 
 ---
 
+## Native iOS app
+
+A SwiftUI iOS companion is available at [`ios/OSUFood.xcodeproj`](ios/OSUFood.xcodeproj). It uses the same live SQLite-backed Next.js API as the web app, so start `npm run dev` on your Mac before running the app in an iOS simulator. See [`ios/README.md`](ios/README.md) for setup, device networking, and prototype security boundaries.
+
+---
+
 ## Quick Start
 
 ### Prerequisites
